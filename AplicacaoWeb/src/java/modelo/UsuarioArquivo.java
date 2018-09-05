@@ -20,18 +20,9 @@ import java.util.List;
  * Classe utilizada para realizar as ações de manipulação de dados de usuário
  */
 public class UsuarioArquivo {
-
-    private static final String PATH_ARQUIVO = "C:\\Users\\leoomoreira\\Documents\\DADOS.txt";
-    private static final String PATH_ARQUIVO_TEMP = "C:\\Users\\leoomoreira\\Documents\\dados.tmp";
-
-    /**
-     * Método utilizado para efetuar o login de usuário, verificando os dados de
-     * login e senha
-     *
-     * @param login
-     * @param senha
-     * @return
-     */
+    
+    private static final String PATH_ARQUIVO = "C:\\Users\\moesio.meneses\\Desktop\\LoginJavaWeb\\AplicacaoWeb\\src\\java\\modelo\\usuarios.txt";
+    
     public boolean efetuarLogin(String login, String senha) {
         Usuario usuario = obterUsuario(login);
         if (usuario != null && senha != null && usuario.getSenha().equals(senha)) {
@@ -41,103 +32,172 @@ public class UsuarioArquivo {
         }
     }
 
-    /**
-     * Método usado para verificar se um login já está registrado no arquivo
-     *
-     * @param login
-     * @return
-     */
-    public boolean existeLogin(String login) {
-        List<Usuario> usuarios = obterTodos();
-        for (int i = 0; usuarios != null && i < usuarios.size(); i++) {
-            Usuario usuario = usuarios.get(i);
-            if (usuario.getLogin().equals(login)) {
-                return true;
+    public boolean inserir(String nome, String login, String senha) {
+        if(!existeUsuario(login)){
+            try {
+                FileWriter fw;
+                fw = new FileWriter(PATH_ARQUIVO, true);
+                BufferedWriter bw = new BufferedWriter(fw);
+                bw.write(nome+";"+login.toLowerCase()+";"+senha);
+                bw.newLine();
+                bw.close();
+                fw.close();
+            } catch (Exception ex) {
+                System.out.println("erro");
             }
         }
-        return false;
+        return true;
     }
-
-    /**
-     * Método utilizado para recuperar todos os usuários registrados no arquivo
-     *
-     * @return
-     */
-    public List<Usuario> obterTodos() {
-        List<Usuario> resultado = new ArrayList<Usuario>();
-        try {
-            FileReader fr = new FileReader(PATH_ARQUIVO);
-            BufferedReader br = new BufferedReader(fr);
-            while (br.ready()) {
-                String[] registro = br.readLine().split(";");
-                Usuario usuario = new Usuario();
-                usuario.setNome(registro[0]);
-                usuario.setLogin(registro[1]);
-                usuario.setSenha(registro[2]);
-                resultado.add(usuario);
-            }
-            br.close();
-            fr.close();
-        } catch (Exception ex) {
-            return new ArrayList<Usuario>();
-        }
-        return resultado;
-    }
-
-    /**
-     * Método utilizado para obter um usuário pelo login
-     *
-     * @param login
-     * @return
-     */
-    public Usuario obterUsuario(String login) {
-        Usuario usuario = null;
-        try {
-            FileReader fr = new FileReader(PATH_ARQUIVO);
-            BufferedReader br = new BufferedReader(fr);
-            while (br.ready()) {
-                String[] registro = br.readLine().split(";");
-                if (registro[1].equals(login)) {
-                    usuario = new Usuario();
-                    usuario.setNome(registro[0]);
-                    usuario.setLogin(registro[1]);
-                    usuario.setSenha(registro[2]);
-                    break;
+    public boolean alterar(String nome, String login, String senha) {
+        if(this.existeUsuario(login.toLowerCase())){
+            List<Usuario> users = new ArrayList();
+            users.addAll(this.obterTodos());
+            Usuario user = new Usuario();
+            for(Usuario u: users){
+                
+                if(u.getLogin().equals(login.toLowerCase()) && u.getSenha().equals(senha)){
+                  user = u;
                 }
             }
+            Usuario aux = new Usuario();
+            aux.setLogin(user.getLogin());
+            aux.setNome(nome);
+            aux.setSenha(user.getSenha());
+            users.remove(user);
+            try {
+                FileWriter fw;
+                fw = new FileWriter(PATH_ARQUIVO, false);
+                BufferedWriter bw = new BufferedWriter(fw);
+                bw.close();
+                fw.close();
+                for(Usuario u: users){
+                   inserir(u.getNome(), u.getLogin(), u.getSenha());
+                }   
+                inserir(aux.getNome(), aux.getLogin(), aux.getSenha());
+                
+
+            } catch (Exception ex) {
+                System.out.println("erro");
+                return false;
+            }
+        }else{
+            System.out.println("Login não existe");
+            return false;
+        }
+        return true;
+    }
+    public boolean remover(String login) {
+        if(this.existeUsuario(login)){
+            List<Usuario> users = new ArrayList();
+            users.addAll(this.obterTodos());
+            Usuario user = new Usuario();
+            for(Usuario u: users){
+                
+                if(u.getLogin().equals(login.toLowerCase())){
+                  user = u;
+                }
+            }
+            users.remove(user);
+            try {
+                FileWriter fw;
+                fw = new FileWriter(PATH_ARQUIVO, false);
+                BufferedWriter bw = new BufferedWriter(fw);
+                bw.close();
+                fw.close();
+                for(Usuario u: users){
+                   inserir(u.getNome(), u.getLogin(), u.getSenha());
+                }   
+               
+                
+
+            } catch (Exception ex) {
+                System.out.println("erro");
+                return false;
+            }
+        }else{
+            System.out.println("Login não existe");
+            return false;
+        }
+        return true;
+    }
+    public Usuario obterUsuario(String login) {
+        Usuario user = new Usuario();
+        boolean exists = false;
+        String usuario = "";
+        try {
+            FileReader fr = new FileReader(PATH_ARQUIVO);
+            BufferedReader br = new BufferedReader(fr);
+            while (br.ready()) {
+                usuario = br.readLine();
+                String[] tupla = usuario.split(";");
+                if(tupla[1].equals(login.toLowerCase())){
+                    user.setNome(tupla[0]);
+                    user.setLogin(tupla[1]);
+                    user.setSenha(tupla[2]);
+                    exists = true;
+                }
+                
+
+            }
+            if(!exists){
+                System.out.println("Login não encontrado!");
+            }
             br.close();
             fr.close();
-        } catch (Exception ex) {
+        }catch (Exception ex) {
+            ex.printStackTrace();
             return null;
         }
-        return usuario;
+        return user;
     }
-
-    /**
-     * Método utilizado para inserir um novo usuário
-     *
-     * @param nome
-     * @param login
-     * @param senha
-     * @return
-     */
-    public boolean inserir(String nome, String login, String senha) {
-        if (existeLogin(login)) {
-            return false;
-        }
-        boolean resultado = false;
+    public List<Usuario> obterTodos() {
+        List<Usuario> listaUsuarios = new ArrayList<>();
+        
+        String usuario;
         try {
-            FileWriter fw = new FileWriter(PATH_ARQUIVO, true);
-            BufferedWriter bw = new BufferedWriter(fw);
-            bw.write(nome + ";" + login + ";" + senha);
-            bw.newLine();
-            bw.close();
-            fw.close();
-            resultado = true;
-        } catch (Exception ex) {
+            FileReader fr = new FileReader(PATH_ARQUIVO);
+            BufferedReader br = new BufferedReader(fr);
+            while (br.ready()) {
+                Usuario user = new Usuario();
+                usuario = br.readLine();
+                String[] tupla = usuario.split(";");
+                user.setNome(tupla[0]);
+                user.setLogin(tupla[1]);
+                user.setSenha(tupla[2]);
+                listaUsuarios.add(user);
+                
+            }
+            br.close();
+            fr.close();
+        }catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return listaUsuarios;
+    }
+    
+    public boolean existeUsuario(String login){
+        String usuario = "";
+        try {
+            FileReader fr = new FileReader(PATH_ARQUIVO);
+            BufferedReader br = new BufferedReader(fr);
+            while (br.ready()) {
+             usuario = br.readLine();
+             for(int i = 0; i<usuario.length(); i++){
+                 String[] tupla = usuario.split(";");
+                 if(tupla[1].equals(login.toLowerCase())){
+                     return true;
+                 }
+             }
+             
+            }
+            br.close();
+            fr.close();
+        }catch (Exception ex) {
             return false;
         }
-        return resultado;
-    }
-
+        
+        return false;
+    } 
 }
+
